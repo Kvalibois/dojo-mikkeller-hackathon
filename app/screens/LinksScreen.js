@@ -1,9 +1,12 @@
 import React from 'react';
-import { ScrollView, StyleSheet, Text } from 'react-native';
+import { ScrollView, StyleSheet, Text, AppState } from 'react-native';
 import { ExpoLinksView } from '@expo/samples';
 import brain from 'brain.js';
 
+import { Gyroscope, DeviceMotion } from 'expo-sensors';
+
 import beerData from '../constants/Beers'
+
 
 var trainingData = [
   // Talisker
@@ -14,14 +17,47 @@ var trainingData = [
   { input: { fruity: 10, sweetness: 10}, output: [0] }, 
 ];
 
+// if (Gyroscope.isAvailableAsync()) {
+// }
+
+var angle = 0
+
+DeviceMotion.addListener(result => {
+  // console.log(result.rotation)
+  displayRatingGesture(result.rotation)
+})
+
+var lastRatingGesture = ""
+
+const displayRatingGesture = (angle) => {
+  // console.log(angle)
+  if (angle.beta <= -1 && lastRatingGesture != "Downvote") {
+    lastRatingGesture = "Downvote"
+    console.log(lastRatingGesture)
+  }
+  if (angle.gamma >= 2 && lastRatingGesture != "Upvote") {
+    lastRatingGesture = "Upvote"
+    console.log(lastRatingGesture)
+  }
+}
+
+DeviceMotion
+
+const addBeerToTrainingData = ( { fruitiness, sweetness, verdict } ) => {
+  var beerObject = { 
+    input: {fruity: fruitiness, sweetness: sweetness}, 
+    output: verdict 
+  };
+  trainingData.push(beerObject);
+}
 
 const recommendBeer = (beerList) => {
   var percentage = 0;
   var mostLikelyBeer;
   
   beerList.forEach( (beer) => {
-    a = beer.fruity
-    b = beer.sweetness
+    a = beer.fruity;
+    b = beer.sweetness;
     likeliness = Array.from(network.run({fruity: a, sweetness: b}))
     if (likeliness > percentage) {
       percentage = likeliness
@@ -36,16 +72,33 @@ network.train(trainingData);
 
 recommendBeer(beerData)
 
-export default function LinksScreen() {
-  return (
-    <ScrollView style={styles.container}>
-      {/**
-       * Go ahead and delete ExpoLinksView and replace it with your content;
-       * we just wanted to provide you with some helpful links.
-       */}
-       <Text style={styles.padded}>{recommendBeer(beerData).name}</Text>
-    </ScrollView>
-  );
+export default class LinksScreen extends React.Component {
+  state = {
+    appState: AppState.currentState,
+    gesture: ""
+  };
+  componentDidMount() {
+    AppState.addEventListener('change', this._handleAppStateChange);
+  }
+  _handleAppStateChange = nextAppState => {
+    this.setState( {
+      gesture: lastRatingGesture
+    })
+  }
+  
+  render() {
+    let ratingVerdict = this.state.rating
+    return (
+      <ScrollView style={styles.container}>
+        {/**
+         * Go ahead and delete ExpoLinksView and replace it with your content;
+         * we just wanted to provide you with some helpful links.
+         */}
+         <Text style={styles.padded}>{recommendBeer(beerData).name}</Text>
+         <Text>{this.state.gesture} xxxs</Text>
+      </ScrollView>
+    );
+  }
 }
 
 LinksScreen.navigationOptions = {
