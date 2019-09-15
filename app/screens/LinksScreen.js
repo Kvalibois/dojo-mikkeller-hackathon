@@ -1,19 +1,22 @@
 import React from 'react';
-
-import { Dimensions } from 'react-native'
+import { ScrollView, StyleSheet, Text, AppState, Dimensions } from 'react-native';
 import Carousel from 'react-native-snap-carousel';
+import { ExpoLinksView } from '@expo/samples';
+import brain from 'brain.js';
+
+import { Gyroscope, DeviceMotion } from 'expo-sensors';
+
+import beerData from '../constants/Beers'
 
 import {
   Image,
   Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
   TouchableOpacity,
   View,
 } from 'react-native';
-import BeerCardLarge from '../components/BeerCardLarge.js';
 
+
+import BeerCardLarge from '../components/BeerCardLarge.js';
 const horizontalMargin = 20;
 const slideWidth = 300;
 
@@ -21,38 +24,137 @@ const sliderWidth = Dimensions.get('window').width;
 const itemWidth = slideWidth + horizontalMargin * 2;
 const itemHeight = 200;
 
-export default class App extends React.Component {
+var trainingData = [
+  // Talisker
+  { input: { fruity: 5, sweetness: 0}, output: [1] },
+  // Highland Park
+  { input: { fruity: 7, sweetness: 0}, output: [1] },
+  // Dalwhinnie
+  { input: { fruity: 10, sweetness: 10}, output: [0] }, 
+];
+
+// if (Gyroscope.isAvailableAsync()) {
+// }
+
+var angle = 0
+
+var lastRatingGesture = ""
+
+const addBeerToTrainingData = ( { fruitiness, sweetness, verdict } ) => {
+  var beerObject = { 
+    input: {fruity: fruitiness, sweetness: sweetness}, 
+    output: verdict 
+  };
+  trainingData.push(beerObject);
+}
+
+const recommendBeer = (beerList) => {
+  var percentage = 0;
+  var mostLikelyBeer;
+  
+  beerList.forEach( (beer) => {
+    a = beer.fruity;
+    b = beer.sweetness;
+    likeliness = Array.from(network.run({fruity: a, sweetness: b}))
+    if (likeliness > percentage) {
+      percentage = likeliness
+      mostLikelyBeer = beer
+    }
+  })
+  return mostLikelyBeer
+}
+
+const network = new brain.NeuralNetwork();
+network.train(trainingData);
+
+const calculatePercentage = (fruity, sweetness) => {
+  a = Array.from(network.run({fruity: fruity, sweetness: sweetness}))
+  a = a * 100
+  a = Math.round(a)
+  return a 
+}
+
+
+
+
+const sortBeersByMatch = () => {
+  var newBeerList = beerData;
+  newBeerList.forEach(element => {
+    rating = element.rating = Array.from(network.run({fruity: element.fruity, sweetness: element.sweetness}))
+  });
+  newBeerList = newBeerList.sort((a, b) => parseFloat(b.rating) - parseFloat(a.rating));
+  return newBeerList
+}
+
+export default class LinksScreen extends React.Component {
   constructor() {
     super()
     this.state = {
-      entries: [
-        {title: 'beer 1', image: 'https://cdn.shopify.com/s/files/1/1268/5569/products/Stick_A_Finger_In_The_Soil_Single_Bottle_1024x1024.jpg', description: 'Lorem ipsum dolor sit amet'},
-        {title: 'beer 1', image: 'https://cdn.shopify.com/s/files/1/1268/5569/products/Stick_A_Finger_In_The_Soil_Single_Bottle_1024x1024.jpg', description: 'Lorem ipsum dolor sit amet'},
-        {title: 'beer 1', image: 'https://cdn.shopify.com/s/files/1/1268/5569/products/Stick_A_Finger_In_The_Soil_Single_Bottle_1024x1024.jpg', description: 'Lorem ipsum dolor sit amet'},
-        {title: 'beer 1', image: 'https://cdn.shopify.com/s/files/1/1268/5569/products/Stick_A_Finger_In_The_Soil_Single_Bottle_1024x1024.jpg', description: 'Lorem ipsum dolor sit amet'}
-      ],
+      beers: beerData,
     }
   }
+  
+  state = {
+    gesture: ""
+  };
+  componentDidMount() {
+    DeviceMotion.addListener(result => {
+      // console.log(result.rotation)
+      displayRatingGesture(result.rotation)
+    })
+  }
+  const = displayRatingGesture = (angle) => {
+    // console.log(angle)
+    if (angle.beta <= -1 && lastRatingGesture != "Downvote") {
+      lastRatingGesture = "Downvote"
+      this.setState( {
+        gesture: lastRatingGesture
+      })
+      console.log(lastRatingGesture)
+    }
+    if (angle.gamma >= 2 && lastRatingGesture != "Upvote") {
+      lastRatingGesture = "Upvote"
+      this.setState( {
+        gesture: lastRatingGesture
+      })
+      console.log(lastRatingGesture)
+    }
+  }
+  
   _renderItem ({item, index}) {
     return (
       <View style={styles.slide}>
-        <BeerCardLarge title={item.title} image={item.image} description={item.description}/>
+        <BeerCardLarge title={item.name} image={item.image} description={item.description} rating={calculatePercentage(item.fruity, item.sweetness)}/>
       </View>
   );}
 
-  render () {
+  render() {
+    let ratingVerdict = this.state.rating
+    /**
+      <ScrollView style={styles.container}>
+       * Go ahead and delete ExpoLinksView and replace it with your content;
+       * we just wanted to provide you with some helpful links.
+        <Text style={styles.padded}>{recommendBeer(beerData).name}</Text>
+        <Text>{this.state.gesture} xxxs</Text>
+          </ScrollView>
+      */
     return (
-      <Carousel
-        layout={'tinder'}
-        ref={(c) => { this._carousel = c; }}
-        data={this.state.entries}
-        renderItem={this._renderItem}
-        sliderWidth={sliderWidth}
-        itemWidth={itemWidth}
-      />
- ); 
-}}
+         <Carousel
+          layout={'tinder'}
+          ref={(c) => { this._carousel = c; }}
+          data={sortBeersByMatch()}
+          renderItem={this._renderItem}
+          sliderWidth={sliderWidth}
+          itemWidth={itemWidth}
+        />
 
+    );
+  }
+}
+
+LinksScreen.navigationOptions = {
+  title: 'Recommendations',
+};
 
 const styles = StyleSheet.create({
   container: {
