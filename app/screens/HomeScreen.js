@@ -40,7 +40,7 @@ export default function HomeScreen() {
           </View>
 
           <Text style={styles.getStartedText}>
-            Mikkeller is nice
+            Mikkeller is nicerererer
           </Text>
         </View>
 
