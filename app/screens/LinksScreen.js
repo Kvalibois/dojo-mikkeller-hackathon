@@ -67,18 +67,30 @@ const recommendBeer = (beerList) => {
 const network = new brain.NeuralNetwork();
 network.train(trainingData);
 
-recommendBeer(beerData)
+const calculatePercentage = (fruity, sweetness) => {
+  a = Array.from(network.run({fruity: fruity, sweetness: sweetness}))
+  a = a * 100
+  a = Math.round(a)
+  return a 
+}
+
+
+
+
+const sortBeersByMatch = () => {
+  var newBeerList = beerData;
+  newBeerList.forEach(element => {
+    rating = element.rating = Array.from(network.run({fruity: element.fruity, sweetness: element.sweetness}))
+  });
+  newBeerList = newBeerList.sort((a, b) => parseFloat(b.rating) - parseFloat(a.rating));
+  return newBeerList
+}
 
 export default class LinksScreen extends React.Component {
   constructor() {
     super()
     this.state = {
-      entries: [
-        {title: 'beer 1', image: 'https://cdn.shopify.com/s/files/1/1268/5569/products/Stick_A_Finger_In_The_Soil_Single_Bottle_1024x1024.jpg', description: 'Lorem ipsum dolor sit amet'},
-        {title: 'beer 1', image: 'https://cdn.shopify.com/s/files/1/1268/5569/products/Stick_A_Finger_In_The_Soil_Single_Bottle_1024x1024.jpg', description: 'Lorem ipsum dolor sit amet'},
-        {title: 'beer 1', image: 'https://cdn.shopify.com/s/files/1/1268/5569/products/Stick_A_Finger_In_The_Soil_Single_Bottle_1024x1024.jpg', description: 'Lorem ipsum dolor sit amet'},
-        {title: 'beer 1', image: 'https://cdn.shopify.com/s/files/1/1268/5569/products/Stick_A_Finger_In_The_Soil_Single_Bottle_1024x1024.jpg', description: 'Lorem ipsum dolor sit amet'}
-      ],
+      beers: beerData,
     }
   }
   
@@ -112,29 +124,30 @@ export default class LinksScreen extends React.Component {
   _renderItem ({item, index}) {
     return (
       <View style={styles.slide}>
-        <BeerCardLarge title={item.title} image={item.image} description={item.description}/>
+        <BeerCardLarge title={item.name} image={item.image} description={item.description} rating={calculatePercentage(item.fruity, item.sweetness)}/>
       </View>
   );}
 
   render() {
     let ratingVerdict = this.state.rating
-    return (
+    /**
       <ScrollView style={styles.container}>
-        {/**
-         * Go ahead and delete ExpoLinksView and replace it with your content;
-         * we just wanted to provide you with some helpful links.
-         */}
-         <Text style={styles.padded}>{recommendBeer(beerData).name}</Text>
-         <Text>{this.state.gesture} xxxs</Text>
+       * Go ahead and delete ExpoLinksView and replace it with your content;
+       * we just wanted to provide you with some helpful links.
+        <Text style={styles.padded}>{recommendBeer(beerData).name}</Text>
+        <Text>{this.state.gesture} xxxs</Text>
+          </ScrollView>
+      */
+    return (
          <Carousel
           layout={'tinder'}
           ref={(c) => { this._carousel = c; }}
-          data={this.state.entries}
+          data={sortBeersByMatch()}
           renderItem={this._renderItem}
           sliderWidth={sliderWidth}
           itemWidth={itemWidth}
         />
-      </ScrollView>
+
     );
   }
 }

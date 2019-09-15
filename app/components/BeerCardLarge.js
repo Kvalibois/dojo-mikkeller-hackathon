@@ -23,7 +23,7 @@ const BeerCardLarge = (beer) => {
                 <Text style={styles.title}>{beer.title}</Text>
                 <Text style={styles.description}>{beer.description}</Text>
                 <View style={styles.metaWrapper}>
-                    <Text style={styles.metaText}>100% Happy boi</Text>
+                    <Text style={styles.metaText}>{beer.rating}% Happy boi</Text>
                 </View>
             </View>
         </View>
