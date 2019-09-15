@@ -22,26 +22,7 @@ var trainingData = [
 
 var angle = 0
 
-DeviceMotion.addListener(result => {
-  // console.log(result.rotation)
-  displayRatingGesture(result.rotation)
-})
-
 var lastRatingGesture = ""
-
-const displayRatingGesture = (angle) => {
-  // console.log(angle)
-  if (angle.beta <= -1 && lastRatingGesture != "Downvote") {
-    lastRatingGesture = "Downvote"
-    console.log(lastRatingGesture)
-  }
-  if (angle.gamma >= 2 && lastRatingGesture != "Upvote") {
-    lastRatingGesture = "Upvote"
-    console.log(lastRatingGesture)
-  }
-}
-
-DeviceMotion
 
 const addBeerToTrainingData = ( { fruitiness, sweetness, verdict } ) => {
   var beerObject = { 
@@ -74,18 +55,33 @@ recommendBeer(beerData)
 
 export default class LinksScreen extends React.Component {
   state = {
-    appState: AppState.currentState,
     gesture: ""
   };
   componentDidMount() {
-    AppState.addEventListener('change', this._handleAppStateChange);
-  }
-  _handleAppStateChange = nextAppState => {
-    this.setState( {
-      gesture: lastRatingGesture
+    DeviceMotion.addListener(result => {
+      // console.log(result.rotation)
+      displayRatingGesture(result.rotation)
     })
   }
+  const = displayRatingGesture = (angle) => {
+    // console.log(angle)
+    if (angle.beta <= -1 && lastRatingGesture != "Downvote") {
+      lastRatingGesture = "Downvote"
+      this.setState( {
+        gesture: lastRatingGesture
+      })
+      console.log(lastRatingGesture)
+    }
+    if (angle.gamma >= 2 && lastRatingGesture != "Upvote") {
+      lastRatingGesture = "Upvote"
+      this.setState( {
+        gesture: lastRatingGesture
+      })
+      console.log(lastRatingGesture)
+    }
+  }
   
+
   render() {
     let ratingVerdict = this.state.rating
     return (
